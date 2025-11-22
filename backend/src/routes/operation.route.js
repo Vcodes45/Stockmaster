@@ -18,14 +18,14 @@ const router = Router();
 router
   .route("/")
   .get(verifyJWT, getOperations)
-  .post(verifyJWT, createOperationValidator(), validate, createOperation);
+  .post(verifyJWT, ...createOperationValidator(), validate, createOperation);
 
 router
   .route("/:id/validate")
-  .post(verifyJWT, operationIdValidator(), validate, validateOperation);
+  .post(verifyJWT, ...operationIdValidator(), validate, validateOperation);
 
 router
   .route("/:id/cancel")
-  .post(verifyJWT, operationIdValidator(), validate, cancelOperation);
+  .post(verifyJWT, ...operationIdValidator(), validate, cancelOperation);
 
 export default router;

@@ -1,63 +1,48 @@
 import { Router } from "express";
 import {
   registerUser,
-  login,
-  logOutUser,
+  loginUser,
+  logoutUser,
   verifyEmail,
-  refreshAccessToken,
+  resendEmailVerification,
   forgotPasswordRequest,
   resetForgotPassword,
+  refreshAccessToken,
   getCurrentUser,
   changeCurrentPassword,
-  resendEmailVerification,
 } from "../controller/auth.controller.js";
-import { validate } from "../middleware/validate.middleware.js";
 import {
   userRegisterValidator,
   userLoginValidator,
-  userForgotPasswordValidator,
   userChangeCurrentPasswordValidator,
-  userResetForgotPasswordValidator,
 } from "../validators/index.js";
+import { validate } from "../middleware/validate.middleware.js";
 import { verifyJWT } from "../middleware/auth.middleware.js";
 
 const router = Router();
 
-// unsecure routes
+// Public routes
 router
   .route("/register")
-  .post(userRegisterValidator(), validate, registerUser);
+  .post(...userRegisterValidator(), validate, registerUser);
 
-router.route("/login").post(userLoginValidator(), validate, login);
+router.route("/login").post(...userLoginValidator(), validate, loginUser);
 
-router.route("/verify-email/:verificationToken").get(verifyEmail);
+router.get("/verify-email/:verificationToken", verifyEmail);
+router.post("/resend-email-verification", resendEmailVerification);
+router.post("/forgot-password", forgotPasswordRequest);
+router.post("/reset-password/:resetToken", resetForgotPassword);
+router.post("/refresh-token", refreshAccessToken);
 
-router.route("/refresh-token").post(refreshAccessToken);
-
-router
-  .route("/forgot-password")
-  .post(userForgotPasswordValidator(), validate, forgotPasswordRequest);
-
-router
-  .route("/reset-password/:resetToken")
-  .post(userResetForgotPasswordValidator(), validate, resetForgotPassword);
-
-// secure route
-router.route("/logout").post(verifyJWT, logOutUser);
-
-router.route("/current-user").get(verifyJWT, getCurrentUser);
-
-router
-  .route("/change-password")
-  .post(
-    verifyJWT,
-    userChangeCurrentPasswordValidator(),
-    validate,
-    changeCurrentPassword
-  );
-
-router
-  .route("/resend-email-verification")
-  .post(verifyJWT, resendEmailVerification);
+// Protected routes
+router.post("/logout", verifyJWT, logoutUser);
+router.get("/current-user", verifyJWT, getCurrentUser);
+router.post(
+  "/change-password",
+  verifyJWT,
+  ...userChangeCurrentPasswordValidator(),
+  validate,
+  changeCurrentPassword
+);
 
 export default router;

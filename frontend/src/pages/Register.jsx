@@ -1,18 +1,18 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { User, Lock, Mail, UserPlus, Loader2 } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { User, Lock, Mail, UserPlus, Loader2 } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
 
 const Register = () => {
   const navigate = useNavigate();
   const { register } = useAuth();
-  
+
   const [formData, setFormData] = useState({
-    username: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    role: 'STAFF'
+    username: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    role: "Staff",
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -24,19 +24,19 @@ const Register = () => {
     // Validation
     const newErrors = {};
     if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
+      newErrors.confirmPassword = "Passwords do not match";
     }
     if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
+      newErrors.password = "Password must be at least 6 characters";
     }
     if (!formData.username.trim()) {
-      newErrors.username = 'Username is required';
+      newErrors.username = "Username is required";
     }
     if (formData.username.length < 3) {
-      newErrors.username = 'Username must be at least 3 characters';
+      newErrors.username = "Username must be at least 3 characters";
     }
     if (formData.username !== formData.username.toLowerCase()) {
-      newErrors.username = 'Username must be lowercase';
+      newErrors.username = "Username must be lowercase";
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -49,15 +49,15 @@ const Register = () => {
     try {
       const { confirmPassword, ...registerData } = formData;
       const result = await register(registerData);
-      
+
       if (result.success) {
         // Redirect to login after successful registration
-        setTimeout(() => navigate('/login'), 2000);
+        setTimeout(() => navigate("/login"), 2000);
       } else {
-        console.log('Registration error:', result);
+        console.log("Registration error:", result);
       }
     } catch (error) {
-      console.log(error)
+      console.log(error);
     } finally {
       setLoading(false);
     }
@@ -66,7 +66,7 @@ const Register = () => {
   const handleInputChange = (e) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
     // Clear errors when user starts typing
     if (errors[e.target.name]) {
@@ -79,24 +79,26 @@ const Register = () => {
       <div className="max-w-md w-full">
         {/* Main Register Card */}
         <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl shadow-indigo-100/50 dark:shadow-black/30 border border-slate-100 dark:border-slate-700 overflow-hidden">
-          
           {/* Header */}
           <div className="bg-gradient-to-r from-indigo-600 to-blue-600 p-8 text-center">
             <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
               <UserPlus size={32} className="text-white" />
             </div>
-            <h1 className="text-2xl font-bold text-white mb-2">Create Account</h1>
+            <h1 className="text-2xl font-bold text-white mb-2">
+              Create Account
+            </h1>
             <p className="text-indigo-100 text-sm">Join StockMaster</p>
           </div>
 
           {/* Register Form */}
           <div className="p-8">
             <form onSubmit={handleSubmit} className="space-y-4">
-              
               {/* Error Message */}
               {errors.general && (
                 <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
-                  <p className="text-sm text-red-600 dark:text-red-400">{errors.general}</p>
+                  <p className="text-sm text-red-600 dark:text-red-400">
+                    {errors.general}
+                  </p>
                 </div>
               )}
 
@@ -106,7 +108,10 @@ const Register = () => {
                   Username *
                 </label>
                 <div className="relative">
-                  <User size={20} className="absolute left-3 top-3 text-slate-400" />
+                  <User
+                    size={20}
+                    className="absolute left-3 top-3 text-slate-400"
+                  />
                   <input
                     type="text"
                     name="username"
@@ -118,7 +123,9 @@ const Register = () => {
                     disabled={loading}
                   />
                 </div>
-                {errors.username && <p className="mt-1 text-sm text-red-600">{errors.username}</p>}
+                {errors.username && (
+                  <p className="mt-1 text-sm text-red-600">{errors.username}</p>
+                )}
               </div>
 
               {/* Email Field */}
@@ -127,7 +134,10 @@ const Register = () => {
                   Email *
                 </label>
                 <div className="relative">
-                  <Mail size={20} className="absolute left-3 top-3 text-slate-400" />
+                  <Mail
+                    size={20}
+                    className="absolute left-3 top-3 text-slate-400"
+                  />
                   <input
                     type="email"
                     name="email"
@@ -139,7 +149,9 @@ const Register = () => {
                     disabled={loading}
                   />
                 </div>
-                {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
+                {errors.email && (
+                  <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+                )}
               </div>
 
               {/* Role Selection */}
@@ -155,8 +167,8 @@ const Register = () => {
                   required
                   disabled={loading}
                 >
-                  <option value="STAFF">Staff</option>
-                  <option value="MANAGER">Manager</option>
+                  <option value="Staff">Staff</option>
+                  <option value="Manager">Manager</option>
                 </select>
               </div>
 
@@ -166,7 +178,10 @@ const Register = () => {
                   Password *
                 </label>
                 <div className="relative">
-                  <Lock size={20} className="absolute left-3 top-3 text-slate-400" />
+                  <Lock
+                    size={20}
+                    className="absolute left-3 top-3 text-slate-400"
+                  />
                   <input
                     type="password"
                     name="password"
@@ -178,7 +193,9 @@ const Register = () => {
                     disabled={loading}
                   />
                 </div>
-                {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password}</p>}
+                {errors.password && (
+                  <p className="mt-1 text-sm text-red-600">{errors.password}</p>
+                )}
               </div>
 
               {/* Confirm Password Field */}
@@ -187,7 +204,10 @@ const Register = () => {
                   Confirm Password *
                 </label>
                 <div className="relative">
-                  <Lock size={20} className="absolute left-3 top-3 text-slate-400" />
+                  <Lock
+                    size={20}
+                    className="absolute left-3 top-3 text-slate-400"
+                  />
                   <input
                     type="password"
                     name="confirmPassword"
@@ -199,7 +219,11 @@ const Register = () => {
                     disabled={loading}
                   />
                 </div>
-                {errors.confirmPassword && <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>}
+                {errors.confirmPassword && (
+                  <p className="mt-1 text-sm text-red-600">
+                    {errors.confirmPassword}
+                  </p>
+                )}
               </div>
 
               {/* Register Button */}
@@ -214,7 +238,7 @@ const Register = () => {
                     Creating Account...
                   </>
                 ) : (
-                  'Create Account'
+                  "Create Account"
                 )}
               </button>
             </form>
@@ -222,7 +246,7 @@ const Register = () => {
             {/* Login Link */}
             <div className="mt-6 text-center">
               <p className="text-sm text-slate-600 dark:text-slate-400">
-                Already have an account?{' '}
+                Already have an account?{" "}
                 <Link
                   to="/login"
                   className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium"

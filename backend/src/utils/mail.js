@@ -1,17 +1,16 @@
-import Mailgen from "mailgen";
 import nodemailer from "nodemailer";
+import Mailgen from "mailgen";
 
-const sendMail = async (options) => {
+const sendEmail = async (options) => {
   const mailGenerator = new Mailgen({
     theme: "default",
     product: {
       name: "StockMaster",
-      link: "https://stockmaster.com",
+      link: process.env.FRONTEND_URL || "http://localhost:5173",
     },
   });
 
-  const emailTextual = mailGenerator.generatePlaintext(options.mailgenContent);
-  const emailHtml = mailGenerator.generate(options.mailgenContent);
+  const emailBody = mailGenerator.generate(options.mailgenContent);
 
   const transporter = nodemailer.createTransport({
     host: process.env.MAILTRAP_SMTP_HOST,
@@ -22,64 +21,20 @@ const sendMail = async (options) => {
     },
   });
 
-  const mail = {
-    from: "noreply@stockmaster.com",
+  const mailOptions = {
+    from: process.env.MAILTRAP_SMTP_USER,
     to: options.email,
     subject: options.subject,
-    text: emailTextual,
-    html: emailHtml,
+    html: emailBody,
   };
 
   try {
-    await transporter.sendMail(mail);
+    await transporter.sendMail(mailOptions);
+    console.log("📧 Email sent successfully to:", options.email);
   } catch (error) {
-    console.error(
-      "Email sending failed. Make sure Mailtrap credentials are correct."
-    );
-    console.error("Error: ", error);
+    console.error("❌ Email sending failed:", error.message);
+    throw error;
   }
 };
 
-const emailVerificationMailgenContent = (username, verificationUrl) => {
-  return {
-    body: {
-      name: username,
-      intro: "Welcome! We're excited to have you on board.",
-      action: {
-        instructions:
-          "To get started, please verify your email address by clicking the button below:",
-        button: {
-          color: "#22BC66",
-          text: "Verify Email",
-          link: verificationUrl,
-        },
-      },
-      outro: "Need help? Just reply to this email, we're always here for you.",
-    },
-  };
-};
-
-const forgotPasswordMailgenContent = (username, passwordResetUrl) => {
-  return {
-    body: {
-      name: username,
-      intro: "We received a request to reset your password.",
-      action: {
-        instructions:
-          "To get started, please click the button below to reset your password:",
-        button: {
-          color: "#22BC66",
-          text: "Reset Password",
-          link: passwordResetUrl,
-        },
-      },
-      outro: "Need help? Just reply to this email, we're always here for you.",
-    },
-  };
-};
-
-export {
-  emailVerificationMailgenContent,
-  forgotPasswordMailgenContent,
-  sendMail,
-};
+export { sendEmail };

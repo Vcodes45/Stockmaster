@@ -41,7 +41,7 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('user', JSON.stringify(userData));
       setUser(userData);
 
-      toast.success(`Welcome back, ${userData.fullName}!`);
+      toast.success(`Welcome back, ${userData.fullname || userData.username}!`);
       return { success: true, user: userData };
     } catch (error) {
       const message = error.message || 'Login failed. Please check your credentials.';

@@ -17,10 +17,10 @@ const router = Router();
 router
   .route("/")
   .get(verifyJWT, getProducts)
-  .post(verifyJWT, createProductValidator(), validate, createProduct);
+  .post(verifyJWT, ...createProductValidator(), validate, createProduct);
 
 router
   .route("/:id")
-  .get(verifyJWT, productIdValidator(), validate, getProductById);
+  .get(verifyJWT, ...productIdValidator(), validate, getProductById);
 
 export default router;

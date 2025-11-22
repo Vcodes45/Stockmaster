@@ -4,23 +4,21 @@ import cookieParser from "cookie-parser";
 
 const app = express();
 
-app.use(express.json({ limit: "16kb" })); // Middleware to parse JSON bodies
-app.use(express.urlencoded({ extended: true, limit: "16kb" })); // Middleware to parse URL-encoded bodies with a size limit
-app.use(express.static("public")); // Middleware to serve static files from the "public" directory
-app.use(cookieParser()); // Middleware to parse cookies
-
-// cors configuration
+// CORS configuration
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN?.split(",") || "http://localhost:5173",
+    origin: process.env.CORS_ORIGIN === '*' ? '*' : ["http://localhost:5173", "http://localhost:5174", "http://localhost:5175", process.env.CORS_ORIGIN],
     credentials: true,
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
-// import the routes
-import healthCheckRouter from "./src/routes/healthcheck.route.js";
+// Body parsers
+app.use(express.json({ limit: "16kb" }));
+app.use(express.urlencoded({ extended: true, limit: "16kb" }));
+app.use(express.static("public"));
+app.use(cookieParser());
+
+// Routes
 import authRouter from "./src/routes/auth.route.js";
 import productRouter from "./src/routes/product.route.js";
 import categoryRouter from "./src/routes/category.route.js";
@@ -28,8 +26,9 @@ import contactRouter from "./src/routes/contact.route.js";
 import locationRouter from "./src/routes/location.route.js";
 import operationRouter from "./src/routes/operation.route.js";
 import dashboardRouter from "./src/routes/dashboard.route.js";
+import healthcheckRouter from "./src/routes/healthcheck.route.js";
 
-app.use("/api/v1/healthcheck", healthCheckRouter);
+// Route declarations
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/products", productRouter);
 app.use("/api/v1/categories", categoryRouter);
@@ -37,24 +36,51 @@ app.use("/api/v1/contacts", contactRouter);
 app.use("/api/v1/locations", locationRouter);
 app.use("/api/v1/operations", operationRouter);
 app.use("/api/v1/dashboard", dashboardRouter);
+app.use("/api/v1/healthcheck", healthcheckRouter);
 
+// Welcome route
 app.get("/", (req, res) => {
-  res.send("Welcome to StockMaster API");
+  res.json({
+    message: "🚀 StockMaster API is running!",
+    version: "1.0.0",
+    endpoints: {
+      auth: "/api/v1/auth",
+      products: "/api/v1/products",
+      categories: "/api/v1/categories",
+      contacts: "/api/v1/contacts",
+      locations: "/api/v1/locations",
+      operations: "/api/v1/operations",
+      dashboard: "/api/v1/dashboard",
+      healthcheck: "/api/v1/healthcheck",
+    },
+  });
 });
 
-// Global error handler middleware
+// 404 handler
+app.use((req, res, next) => {
+  res.status(404).json({
+    success: false,
+    message: `Route ${req.originalUrl} not found`,
+  });
+});
+
+// Global error handler - MUST BE LAST
 app.use((err, req, res, next) => {
+  console.error("🔥 Error:", {
+    message: err.message,
+    statusCode: err.statusCode,
+    stack: process.env.NODE_ENV === "development" ? err.stack : undefined,
+  });
+
   const statusCode = err.statusCode || 500;
   const message = err.message || "Internal Server Error";
-  const errors = err.errors || [];
 
-  return res.status(statusCode).json({
+  res.status(statusCode).json({
     success: false,
-    statusCode,
     message,
-    errors,
+    errors: err.errors || [],
     ...(process.env.NODE_ENV === "development" && { stack: err.stack }),
   });
 });
 
-export default app;
+export { app };
