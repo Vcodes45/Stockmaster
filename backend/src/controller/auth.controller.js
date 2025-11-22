@@ -12,6 +12,12 @@ const registerUser = asyncHandler(async (req, res) => {
 
   const { username, email, password, role } = req.body;
 
+  const normalizedRole = role
+    ? role.toUpperCase() === "MANAGER"
+      ? "MANAGER"
+      : "STAFF"
+    : "STAFF";
+
   // Validate required fields
   if (!username || !email || !password) {
     throw new ApiError(400, "All fields are required");
@@ -34,7 +40,7 @@ const registerUser = asyncHandler(async (req, res) => {
     username: username.toLowerCase(),
     email: email.toLowerCase(),
     password,
-    role: role || "STAFF",
+    role: normalizedRole,
     isEmailVerified: true, // Auto-verify for development
   });
 
