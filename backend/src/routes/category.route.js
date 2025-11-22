@@ -20,12 +20,12 @@ const router = Router();
 router
   .route("/")
   .get(verifyJWT, getCategories)
-  .post(verifyJWT, ...createCategoryValidator(), validate, createCategory);
+  .post(verifyJWT, createCategoryValidator(), validate, createCategory);
 
 router
   .route("/:id")
-  .get(verifyJWT, ...categoryIdValidator(), validate, getCategoryById)
-  .put(verifyJWT, ...categoryIdValidator(), ...updateCategoryValidator(), validate, updateCategory)
-  .delete(verifyJWT, ...categoryIdValidator(), validate, deleteCategory);
+  .get(verifyJWT, categoryIdValidator(), validate, getCategoryById)
+  .put(verifyJWT, categoryIdValidator(), updateCategoryValidator(), validate, updateCategory)
+  .delete(verifyJWT, categoryIdValidator(), validate, deleteCategory);
 
 export default router;

@@ -53,27 +53,33 @@ const registerUser = asyncHandler(async (req, res) => {
     email,
     password,
     username,
-    isEmailVerified: false,
+    isEmailVerified: true, // Auto-verify for development
   });
 
-  const { unHashedToken, hashedToken, tokenExpiry } =
-    user.generateTemporaryToken();
+  // Try to send verification email, but don't fail registration if it fails
+  try {
+    const { unHashedToken, hashedToken, tokenExpiry } =
+      user.generateTemporaryToken();
 
-  user.emailVerificationToken = hashedToken;
-  user.emailVerificationTokenExpiry = tokenExpiry;
+    user.emailVerificationToken = hashedToken;
+    user.emailVerificationTokenExpiry = tokenExpiry;
 
-  await user.save({ validateBeforeSave: false });
+    await user.save({ validateBeforeSave: false });
 
-  await sendMail({
-    email: user?.email,
-    subject: "Verify your email",
-    mailgenContent: emailVerificationMailgenContent(
-      user?.username,
-      `${req.protocol}://${req.get(
-        "host"
-      )}/api/v1/users/verify-email/${unHashedToken}`
-    ),
-  });
+    await sendMail({
+      email: user?.email,
+      subject: "Verify your email",
+      mailgenContent: emailVerificationMailgenContent(
+        user?.username,
+        `${req.protocol}://${req.get(
+          "host"
+        )}/api/v1/auth/verify-email/${unHashedToken}`
+      ),
+    });
+  } catch (emailError) {
+    console.log("Email sending failed:", emailError.message);
+    // Continue with registration even if email fails
+  }
 
   const createdUser = await User.findById(user._id).select(
     "-password -refreshToken -emailVerificationToken -emailVerificationTokenExpiry"
@@ -89,7 +95,7 @@ const registerUser = asyncHandler(async (req, res) => {
       new ApiResponse(
         200,
         { user: createdUser },
-        "User registered successfully and verification email sent to the registered email address."
+        "User registered successfully"
       )
     );
 });

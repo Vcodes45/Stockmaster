@@ -10,6 +10,6 @@ const router = Router();
 router
   .route("/")
   .get(verifyJWT, getLocations)
-  .post(verifyJWT, ...createLocationValidator(), validate, createLocation);
+  .post(verifyJWT, createLocationValidator(), validate, createLocation);
 
 export default router;

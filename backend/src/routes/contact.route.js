@@ -10,6 +10,6 @@ const router = Router();
 router
   .route("/")
   .get(verifyJWT, getContacts)
-  .post(verifyJWT, ...createContactValidator(), validate, createContact);
+  .post(verifyJWT, createContactValidator(), validate, createContact);
 
 export default router;
