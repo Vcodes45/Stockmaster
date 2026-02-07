@@ -7,7 +7,7 @@ const app = express();
 // CORS configuration
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN === '*' ? '*' : ["http://localhost:5173", "http://localhost:5174", "http://localhost:5175", process.env.CORS_ORIGIN],
+    origin: process.env.CORS_ORIGIN === '*' ? '*' : ["http://localhost:5173", "http://localhost:5174", "https://stockmaster-lovat.vercel.app", process.env.CORS_ORIGIN],
     credentials: true,
   })
 );
