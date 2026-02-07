@@ -26,8 +26,10 @@ const Sidebar = () => {
   const menuItems = allMenuItems.filter(item => item.roles.includes(user?.role));
 
   const handleLogout = async () => {
+    // Navigate first before clearing auth state to prevent
+    // ProtectedRoute from redirecting to /login
+    navigate('/', { replace: true });
     await logout();
-    navigate('/login');
   };
 
   return (
@@ -37,8 +39,8 @@ const Sidebar = () => {
     >
       {/* Brand Logo */}
       <div className="p-8 flex items-center gap-3">
-        <div className="bg-indigo-600 p-2 rounded-xl shadow-lg shadow-indigo-200 dark:shadow-none">
-          <Hexagon className="text-white fill-white" size={24} />
+        <div className="w-10 h-10 rounded-xl overflow-hidden shadow-lg shadow-indigo-200 dark:shadow-none">
+          <img src="/logo.png" alt="StockMaster" className="w-full h-full object-cover" />
         </div>
         <div>
           <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-400 block">

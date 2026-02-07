@@ -8,7 +8,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Initialize auth state from localStorage
+
   useEffect(() => {
     const initAuth = async () => {
       const storedUser = localStorage.getItem('user');
@@ -17,9 +17,6 @@ export const AuthProvider = ({ children }) => {
       if (storedUser && token) {
         try {
           setUser(JSON.parse(storedUser));
-          // Optionally verify token with backend
-          // const response = await authService.getCurrentUser();
-          // setUser(response.data);
         } catch (error) {
           console.error('Failed to restore auth state:', error);
           localStorage.removeItem('user');

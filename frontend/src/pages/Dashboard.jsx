@@ -1,5 +1,6 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "../context/AuthContext";
 import {
   AreaChart,
   Area,
@@ -8,6 +9,8 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  Legend,
+  ReferenceLine
 } from "recharts";
 import {
   TrendingUp,
@@ -22,6 +25,8 @@ import Loading from "../components/Loading";
 import EmptyState from "../components/EmptyState";
 
 const Dashboard = () => {
+  const { isManager } = useAuth();
+
   // Fetch dashboard stats
   const {
     data: stats,
@@ -48,6 +53,9 @@ const Dashboard = () => {
 
   const statsData = stats?.data || {};
   const stockTrendData = statsData.stockMovements || [];
+  const financialData = statsData.financialTrends || [];
+  const recentOperations = statsData.recentOperations || [];
+
   const hasMovementData = stockTrendData.some(
     (entry) =>
       entry.receipts ||
@@ -55,10 +63,31 @@ const Dashboard = () => {
       entry.internalTransfers ||
       entry.adjustments
   );
-  const recentOperations = statsData.recentOperations || [];
+
+  const hasFinancialData = financialData.some(
+    (entry) => entry.revenue || entry.cost || entry.profit
+  );
+
+  const formatOperationType = (type) => {
+    switch (type) {
+      case "NEW_PRODUCT":
+        return "New Product Added";
+      case "RECEIPT":
+        return "Stock Received";
+      case "DELIVERY":
+        return "Stock Delivered";
+      case "INTERNAL_TRANSFER":
+        return "Stock Moved";
+      case "ADJUSTMENT":
+        return "Stock Adjustment";
+      default:
+        return `${type} Operation`;
+    }
+  };
+
   return (
     <div className="p-2 md:p-10 max-w-[1600px] mx-auto space-y-8">
-      {/* Header */}
+      {/* ... keeping header ... */}
       <div className="flex justify-between items-end">
         <div>
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
@@ -77,6 +106,7 @@ const Dashboard = () => {
           })}
         </div>
       </div>
+
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -114,6 +144,91 @@ const Dashboard = () => {
         />
       </div>
 
+      {/* Financial Chart (Managers Only) */}
+      {isManager && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700"
+        >
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-bold text-slate-800 dark:text-white">
+              Financial Performance
+            </h3>
+            <span className="text-xs font-medium px-3 py-1 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 rounded-full">
+              Manager View
+            </span>
+          </div>
+
+          {hasFinancialData ? (
+            <ResponsiveContainer width="100%" height={350}>
+              <AreaChart
+                data={financialData}
+                margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+              >
+                <defs>
+                  <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="colorProfit" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" opacity={0.5} />
+                <XAxis dataKey="date" stroke="#94a3b8" />
+                <YAxis stroke="#94a3b8" />
+                <Tooltip
+                  contentStyle={{
+                    background: "#1e293b",
+                    border: "none",
+                    borderRadius: "12px",
+                    color: "#fff",
+                  }}
+                  itemStyle={{ color: "#fff" }}
+                />
+                <Legend />
+                <Area
+                  type="monotone"
+                  dataKey="revenue"
+                  stroke="#8b5cf6"
+                  fillOpacity={1}
+                  fill="url(#colorRevenue)"
+                  name="Revenue"
+                />
+                <Area
+                  type="monotone"
+                  dataKey="cost"
+                  stroke="#ef4444"
+                  fillOpacity={0}
+                  fill="#ef4444"
+                  name="Cost"
+                  strokeDasharray="5 5"
+                />
+                <Area
+                  type="monotone"
+                  dataKey="profit"
+                  stroke="#10b981"
+                  fillOpacity={1}
+                  fill="url(#colorProfit)"
+                  name="Profit"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-[350px] w-full flex flex-col items-center justify-center text-slate-400 dark:text-slate-600 border-2 border-dashed border-slate-100 dark:border-slate-700 rounded-2xl">
+              <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-full mb-3">
+                <TrendingUp size={32} className="opacity-50" />
+              </div>
+              <p className="font-medium">No financial data available yet</p>
+              <p className="text-sm mt-1">Process outgoing deliveries to generate revenue stats</p>
+            </div>
+          )}
+        </motion.div>
+      )}
+
       {/* Charts Area */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <motion.div
@@ -122,86 +237,197 @@ const Dashboard = () => {
           transition={{ delay: 0.2 }}
           className="lg:col-span-2 bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700"
         >
-          <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-6">
-            Stock Movement Trends
-          </h3>
+          <div className="flex justify-between items-start mb-4">
+            <div>
+              <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-1">
+                Stock Activity Trends
+              </h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                Last 30 days history + 7 days forecast
+              </p>
+            </div>
+            <div className="flex gap-4 text-xs">
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 rounded-full bg-slate-600"></div>
+                <span className="text-slate-500">Historical</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 rounded-full bg-slate-400 border-2 border-dashed border-slate-600"></div>
+                <span className="text-slate-500">Forecast</span>
+              </div>
+            </div>
+          </div>
           {hasMovementData ? (
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={340}>
               <AreaChart
                 data={stockTrendData}
-                margin={{ top: 10, right: 20, left: 0, bottom: 0 }}
+                margin={{ top: 20, right: 30, left: 10, bottom: 10 }}
               >
                 <defs>
-                  <linearGradient
-                    id="colorReceipts"
-                    x1="0"
-                    y1="0"
-                    x2="0"
-                    y2="1"
-                  >
-                    <stop offset="5%" stopColor="#34d399" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#34d399" stopOpacity={0} />
+                  {/* Receipts Gradient - Emerald */}
+                  <linearGradient id="colorReceipts" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#10b981" stopOpacity={0.4} />
+                    <stop offset="100%" stopColor="#10b981" stopOpacity={0.05} />
                   </linearGradient>
-                  <linearGradient
-                    id="colorDeliveries"
-                    x1="0"
-                    y1="0"
-                    x2="0"
-                    y2="1"
-                  >
-                    <stop offset="5%" stopColor="#f87171" stopOpacity={0.25} />
-                    <stop offset="95%" stopColor="#f87171" stopOpacity={0} />
+                  {/* Deliveries Gradient - Rose */}
+                  <linearGradient id="colorDeliveries" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#f43f5e" stopOpacity={0.4} />
+                    <stop offset="100%" stopColor="#f43f5e" stopOpacity={0.05} />
+                  </linearGradient>
+                  {/* Transfers Gradient - Indigo */}
+                  <linearGradient id="colorTransfers" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#6366f1" stopOpacity={0.4} />
+                    <stop offset="100%" stopColor="#6366f1" stopOpacity={0.05} />
+                  </linearGradient>
+                  {/* Adjustments Gradient - Amber */}
+                  <linearGradient id="colorAdjustments" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#f59e0b" stopOpacity={0.4} />
+                    <stop offset="100%" stopColor="#f59e0b" stopOpacity={0.05} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis dataKey="date" stroke="#94a3b8" />
-                <YAxis stroke="#94a3b8" allowDecimals={false} domain={[0, "auto"]} />
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="#334155"
+                  strokeOpacity={0.3}
+                  vertical={false}
+                />
+                <XAxis
+                  dataKey="date"
+                  stroke="#64748b"
+                  fontSize={11}
+                  tickLine={false}
+                  axisLine={{ stroke: '#334155', strokeOpacity: 0.5 }}
+                  tickFormatter={(value) => {
+                    const date = new Date(value);
+                    return `${date.getDate()}/${date.getMonth() + 1}`;
+                  }}
+                  interval={4}
+                  dy={10}
+                />
+                <YAxis
+                  stroke="#64748b"
+                  allowDecimals={false}
+                  domain={[0, "auto"]}
+                  fontSize={11}
+                  tickLine={false}
+                  axisLine={false}
+                  dx={-5}
+                  tickFormatter={(value) => value > 0 ? value : ''}
+                />
                 <Tooltip
                   contentStyle={{
-                    background: "#0f172a",
-                    borderRadius: "12px",
-                    border: "none",
+                    background: "rgba(15, 23, 42, 0.95)",
+                    borderRadius: "16px",
+                    border: "1px solid rgba(100, 116, 139, 0.3)",
+                    boxShadow: "0 20px 40px rgba(0, 0, 0, 0.4)",
+                    padding: "12px 16px",
+                  }}
+                  labelStyle={{
+                    color: "#e2e8f0",
+                    fontWeight: "600",
+                    marginBottom: "8px",
+                    fontSize: "13px"
+                  }}
+                  itemStyle={{
+                    color: "#94a3b8",
+                    fontSize: "12px",
+                    padding: "2px 0"
+                  }}
+                  labelFormatter={(value) => {
+                    const entry = stockTrendData.find(d => d.date === value);
+                    const dateStr = new Date(value).toLocaleDateString('en-US', {
+                      weekday: 'long',
+                      month: 'short',
+                      day: 'numeric'
+                    });
+                    return entry?.isPrediction ? `📊 ${dateStr} (Forecast)` : `📅 ${dateStr}`;
+                  }}
+                  formatter={(value, name) => [
+                    <span key={name} style={{ fontWeight: 500 }}>{value} units</span>,
+                    name
+                  ]}
+                  cursor={{ stroke: '#6366f1', strokeWidth: 1, strokeDasharray: '5 5' }}
+                />
+                <ReferenceLine
+                  x={(() => {
+                    const today = new Date();
+                    const year = today.getFullYear();
+                    const month = String(today.getMonth() + 1).padStart(2, '0');
+                    const day = String(today.getDate()).padStart(2, '0');
+                    return `${year}-${month}-${day}`;
+                  })()}
+                  stroke="#8b5cf6"
+                  strokeDasharray="4 4"
+                  strokeWidth={2}
+                  label={{
+                    value: '⬇ Today',
+                    position: 'top',
+                    fill: '#a78bfa',
+                    fontSize: 11,
+                    fontWeight: 600
                   }}
                 />
-                <Area
-                  type="monotone"
-                  dataKey="internalTransfers"
-                  stroke="#6366f1"
-                  fillOpacity={0.15}
-                  fill="#6366f1"
-                  name="Transfers"
+                <Legend
+                  wrapperStyle={{ paddingTop: "20px" }}
+                  iconType="circle"
+                  iconSize={10}
+                  formatter={(value) => (
+                    <span style={{ color: '#94a3b8', fontSize: '12px', marginLeft: '4px' }}>{value}</span>
+                  )}
                 />
                 <Area
-                  type="monotone"
+                  type="monotoneX"
                   dataKey="receipts"
                   stroke="#10b981"
+                  strokeWidth={2.5}
                   fillOpacity={1}
                   fill="url(#colorReceipts)"
-                  name="Receipts"
+                  name="📥 Receipts"
+                  dot={false}
+                  activeDot={{ r: 6, fill: '#10b981', stroke: '#fff', strokeWidth: 2 }}
                 />
                 <Area
-                  type="monotone"
+                  type="monotoneX"
                   dataKey="deliveries"
-                  stroke="#ef4444"
+                  stroke="#f43f5e"
+                  strokeWidth={2.5}
                   fillOpacity={1}
                   fill="url(#colorDeliveries)"
-                  name="Deliveries"
+                  name="📤 Deliveries"
+                  dot={false}
+                  activeDot={{ r: 6, fill: '#f43f5e', stroke: '#fff', strokeWidth: 2 }}
                 />
                 <Area
-                  type="monotone"
+                  type="monotoneX"
+                  dataKey="internalTransfers"
+                  stroke="#6366f1"
+                  strokeWidth={2.5}
+                  fillOpacity={1}
+                  fill="url(#colorTransfers)"
+                  name="🔄 Transfers"
+                  dot={false}
+                  activeDot={{ r: 6, fill: '#6366f1', stroke: '#fff', strokeWidth: 2 }}
+                />
+                <Area
+                  type="monotoneX"
                   dataKey="adjustments"
                   stroke="#f59e0b"
-                  fillOpacity={0.2}
-                  fill="#f59e0b"
-                  name="Adjustments"
+                  strokeWidth={2.5}
+                  fillOpacity={1}
+                  fill="url(#colorAdjustments)"
+                  name="⚙️ Adjustments"
+                  dot={false}
+                  activeDot={{ r: 6, fill: '#f59e0b', stroke: '#fff', strokeWidth: 2 }}
                 />
               </AreaChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-[300px] w-full flex items-center justify-center text-slate-400 dark:text-slate-600">
-              <p className="text-sm">
-                No stock movement data for the selected period
-              </p>
+              <div className="h-[340px] w-full flex flex-col items-center justify-center text-slate-400 dark:text-slate-600 border-2 border-dashed border-slate-100 dark:border-slate-700 rounded-2xl">
+                <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-full mb-3">
+                  <TrendingUp size={32} className="opacity-50" />
+                </div>
+                <p className="font-medium">No stock activity data yet</p>
+                <p className="text-sm mt-1 text-center px-4">Validate receipts, deliveries, or transfers to see historical trends and forecasts</p>
             </div>
           )}
         </motion.div>
@@ -222,10 +448,10 @@ const Dashboard = () => {
                   <div className="w-2 h-2 mt-2 rounded-full bg-indigo-500 shrink-0 ring-4 ring-indigo-100 dark:ring-indigo-900"></div>
                   <div>
                     <p className="text-sm font-medium text-slate-800 dark:text-slate-200">
-                      {operation.type} Operation
+                      {formatOperationType(operation.type)}
                     </p>
                     <p className="text-xs text-slate-500 dark:text-slate-400">
-                      {operation.reference || "No reference"}
+                      {operation.reference ? operation.reference : "No reference"}
                     </p>
                     <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
                       {new Date(operation.createdAt).toLocaleString()}

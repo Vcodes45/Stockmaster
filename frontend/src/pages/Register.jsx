@@ -1,10 +1,11 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { User, Lock, Mail, UserPlus, Loader2 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 const Register = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { register } = useAuth();
 
   const [formData, setFormData] = useState({
@@ -12,7 +13,7 @@ const Register = () => {
     email: "",
     password: "",
     confirmPassword: "",
-    role: "Staff",
+    role: location.state?.role || "Staff",
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});

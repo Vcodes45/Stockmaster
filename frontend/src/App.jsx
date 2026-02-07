@@ -12,6 +12,7 @@ import PublicRoute from './components/PublicRoute';
 import Sidebar from './components/Sidebar';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import LandingPage from './pages/LandingPage';
 
 // Page Imports
 import Dashboard from './pages/Dashboard';
@@ -29,9 +30,9 @@ import Transfers from './pages/Transfers';
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      refetchOnWindowFocus: false,
+      refetchOnWindowFocus: true,
       retry: 1,
-      staleTime: 5 * 60 * 1000, // 5 minutes
+      staleTime: 0, // Always fetch fresh data
     },
   },
 });
@@ -93,7 +94,7 @@ function AppContent() {
   };
 
   return (
-    <div className="flex bg-[#F8FAFC] dark:bg-slate-900 min-h-screen font-sans text-slate-900 dark:text-slate-100 transition-colors duration-300">
+    <div className="bg-[#F8FAFC] dark:bg-slate-900 min-h-screen font-sans text-slate-900 dark:text-slate-100 transition-colors duration-300">
       <Routes>
         {/* Public Routes */}
         <Route
@@ -111,6 +112,10 @@ function AppContent() {
               <Register />
             </PublicRoute>
           }
+        />
+        <Route
+          path="/"
+          element={<LandingPage theme={theme} toggleTheme={toggleTheme} />}
         />
 
         {/* Protected Routes */}
