@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { authService } from '../services/auth.service';
 import toast from 'react-hot-toast';
 
@@ -8,6 +9,8 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     const initAuth = async () => {
@@ -54,6 +57,8 @@ export const AuthProvider = ({ children }) => {
       localStorage.removeItem('accessToken');
       localStorage.removeItem('user');
       setUser(null);
+      // Clear React Query cache to prevent data leaking to next user
+      queryClient.clear(); 
       toast.success('Logged out successfully');
     } catch (error) {
       console.error('Logout error:', error);
@@ -61,6 +66,7 @@ export const AuthProvider = ({ children }) => {
       localStorage.removeItem('accessToken');
       localStorage.removeItem('user');
       setUser(null);
+      queryClient.clear();
     }
   };
 
