@@ -7,7 +7,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'https://stockmaster-086q.onrender.com', // Your backend URL
+        target: 'http://localhost:8000', // Your backend URL
         changeOrigin: true,
         secure: false,
       },
