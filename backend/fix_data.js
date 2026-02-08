@@ -4,11 +4,11 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-// Convert import.meta.url to __dirname equivalent
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Load .env from backend directory
+
 dotenv.config({ path: path.join(__dirname, '.env') });
 
 const connectDB = async () => {
@@ -21,7 +21,7 @@ const connectDB = async () => {
     }
 };
 
-// Define minimal schemas if models are not imported
+
 const userSchema = new mongoose.Schema({
     email: String,
     role: String
@@ -40,7 +40,7 @@ const fixData = async () => {
     await connectDB();
 
     try {
-        // 1. Promote user to MANAGER
+
         const email = 'vanshsharma020406@gmail.com';
         const user = await User.findOneAndUpdate(
             { email: email },
@@ -54,7 +54,7 @@ const fixData = async () => {
             console.log(`❌ User ${email} NOT FOUND`);
         }
 
-        // 2. Set prices for products (to enable financial stats)
+
         const res = await Product.updateMany(
             {},
             { $set: { costPrice: 500, salesPrice: 800 } }

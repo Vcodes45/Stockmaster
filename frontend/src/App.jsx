@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
 import { Sun, Moon } from 'lucide-react';
 
-// Context & Components
+
 import { AuthProvider } from './context/AuthContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -14,7 +14,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import LandingPage from './pages/LandingPage';
 
-// Page Imports
+
 import Dashboard from './pages/Dashboard';
 import AddProduct from './pages/AddProduct';
 import ProductList from './pages/ProductList';
@@ -26,13 +26,13 @@ import Deliveries from './pages/Deliveries';
 import Adjustments from './pages/Adjustments';
 import Transfers from './pages/Transfers';
 
-// Create a client for React Query
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       refetchOnWindowFocus: true,
       retry: 1,
-      staleTime: 0, // Always fetch fresh data
+      staleTime: 0,
     },
   },
 });

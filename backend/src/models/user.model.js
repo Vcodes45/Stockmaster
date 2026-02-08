@@ -68,7 +68,7 @@ userSchema.methods.isPasswordCorrect = async function (password) {
   return await bcrypt.compare(password, this.password);
 };
 
-// Access Token :- For short-term authentication
+
 userSchema.methods.generateAccessToken = function () {
   return jwt.sign(
     {
@@ -77,22 +77,22 @@ userSchema.methods.generateAccessToken = function () {
       username: this.username,
     },
     process.env.ACCESS_TOKEN_SECRET,
-    { expiresIn: process.env.ACCESS_TOKEN_EXPIRY }
+    { expiresIn: process.env.ACCESS_TOKEN_EXPIRY || '1d' }
   );
 };
 
-// Refresh Token :- For long-term authentication, to get new access tokens
+
 userSchema.methods.generateRefreshToken = function () {
   return jwt.sign(
     {
       _id: this._id,
     },
     process.env.REFRESH_TOKEN_SECRET,
-    { expiresIn: process.env.REFRESH_TOKEN_EXPIRY }
+    { expiresIn: process.env.REFRESH_TOKEN_EXPIRY || '10d' }
   );
 };
 
-// Temporary Token :- For email verification and password reset
+
 userSchema.methods.generateTemporaryToken = function () {
   const unHashedToken = crypto.randomBytes(20).toString("hex");
 
