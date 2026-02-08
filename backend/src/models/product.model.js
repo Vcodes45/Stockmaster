@@ -14,20 +14,20 @@ const productSchema = new Schema(
     description: {
       type: String,
     },
-    // RELATIONSHIP: Link to the Category Model
+
     category: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Category", // Must match the name in mongoose.model('Category'...)
+      ref: "Category", 
       required: true,
     },
     unitOfMeasure: {
       type: String,
       required: true,
-      default: "Units", // e.g., kg, meters, liters, box
+      default: "Units", 
     },
     minStockLevel: {
       type: Number,
-      default: 0, // Used for Low Stock Alerts
+      default: 0, 
     },
     costPrice: {
       type: Number,
@@ -37,12 +37,16 @@ const productSchema = new Schema(
       type: Number,
       default: 0,
     },
-    // NOTE: Do not store "currentStock" here if you want multi-warehouse support.
+    owner: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
   },
   { timestamps: true }
 );
 
-// Add index for efficient querying
+
 productSchema.index({ name: 1 });
 productSchema.index({ sku: 1 }, { unique: true });
 productSchema.index({ category: 1 });

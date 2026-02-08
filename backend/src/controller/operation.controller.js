@@ -33,8 +33,8 @@ const createOperation = asyncHandler(async (req, res) => {
     throw new ApiError(400, "At least one line item is required");
   }
 
-  // Check for duplicate reference
-  const existingOperation = await Operation.findOne({ reference });
+  // Check for duplicate reference for this user
+  const existingOperation = await Operation.findOne({ reference, owner: req.user._id });
   if (existingOperation) {
     throw new ApiError(409, "Operation with this reference already exists");
   }
@@ -48,6 +48,7 @@ const createOperation = asyncHandler(async (req, res) => {
     scheduledDate,
     lines,
     status: "DRAFT",
+    owner: req.user._id,
   });
 
   const populatedOperation = await Operation.findById(operation._id)
@@ -66,7 +67,7 @@ const createOperation = asyncHandler(async (req, res) => {
 const getOperations = asyncHandler(async (req, res) => {
   const { type, status } = req.query;
 
-  const query = {};
+  const query = { owner: req.user._id };
   if (type) {
     const validTypes = [
       "RECEIPT",
@@ -110,7 +111,7 @@ const validateOperation = asyncHandler(async (req, res) => {
 
   try {
     const { id } = req.params;
-    const operation = await Operation.findById(id).session(session);
+    const operation = await Operation.findOne({ _id: id, owner: req.user._id }).session(session);
 
     if (!operation) {
       throw new ApiError(404, "Operation not found");
@@ -164,6 +165,7 @@ const validateOperation = asyncHandler(async (req, res) => {
             destinationLocation: operation.destinationLocation,
             operationReference: operation.reference,
             date: new Date(),
+            owner: req.user._id,
           },
         ],
         { session }
@@ -201,7 +203,7 @@ const validateOperation = asyncHandler(async (req, res) => {
 
 const cancelOperation = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const operation = await Operation.findById(id);
+  const operation = await Operation.findOne({ _id: id, owner: req.user._id });
 
   if (!operation) {
     throw new ApiError(404, "Operation not found");

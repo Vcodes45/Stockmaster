@@ -5,7 +5,7 @@ const locationSchema = new Schema(
     name: {
       type: String,
       required: true,
-      trim: true, // e.g., "Main Warehouse", "Rack B", "Vendor Location"
+      trim: true, 
     },
     type: {
       type: String,
@@ -16,6 +16,11 @@ const locationSchema = new Schema(
     },
     address: {
       type: String,
+    },
+    owner: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
     },
   },
   { timestamps: true }

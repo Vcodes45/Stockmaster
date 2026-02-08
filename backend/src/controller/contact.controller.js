@@ -20,6 +20,7 @@ const createContact = asyncHandler(async (req, res) => {
     email,
     phone,
     address,
+    owner: req.user._id,
   });
 
   return res
@@ -28,9 +29,9 @@ const createContact = asyncHandler(async (req, res) => {
 });
 
 const getContacts = asyncHandler(async (req, res) => {
-  const { type } = req.query; // 'VENDOR' or 'CUSTOMER'
+  const { type } = req.query; 
   
-  const query = {};
+  const query = { owner: req.user._id };
   if (type) {
     if (!['VENDOR', 'CUSTOMER'].includes(type)) {
       throw new ApiError(400, "Type must be either VENDOR or CUSTOMER");

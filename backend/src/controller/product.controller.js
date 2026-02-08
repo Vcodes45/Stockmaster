@@ -26,8 +26,12 @@ const createProduct = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Name, SKU, and category are required");
   }
 
-  // Check if product with same SKU already exists
-  const existingProduct = await Product.findOne({ sku: sku.toUpperCase() });
+  // Check if product with same SKU already exists for this user
+  const existingProduct = await Product.findOne({
+    sku: sku.toUpperCase(),
+    owner: req.user._id,
+  });
+
   if (existingProduct) {
     throw new ApiError(409, "Product with this SKU already exists");
   }
@@ -48,6 +52,7 @@ const createProduct = asyncHandler(async (req, res) => {
           minStockLevel: minStockLevel || 0,
           costPrice: costPrice || 0,
           salesPrice: salesPrice || 0,
+          owner: req.user._id,
         },
       ],
       { session }
@@ -55,26 +60,31 @@ const createProduct = asyncHandler(async (req, res) => {
 
     // 2. Handle Initial Stock (If provided)
     if (initialStock && initialStock > 0 && initialStockLocationId) {
-      // Find 'Inventory Loss' or 'Virtual' location for the source
-      const virtualSource = await Location.findOne(
-        { type: "INVENTORY_LOSS" },
-        null,
-        { session }
-      );
+      // Find 'Inventory Loss' or 'Virtual' location for the source for THIS user
+      let virtualSource = await Location.findOne(
+        { type: "INVENTORY_LOSS", owner: req.user._id }
+      ).session(session);
 
+      // If missing, create it for the user
       if (!virtualSource) {
-        throw new ApiError(
-          404,
-          "Virtual source location (INVENTORY_LOSS) not found. Please create one first."
+        [virtualSource] = await Location.create(
+          [
+            {
+              name: "Inventory Loss",
+              type: "INVENTORY_LOSS",
+              address: "Virtual Location",
+              owner: req.user._id,
+            },
+          ],
+          { session }
         );
       }
 
-      // Verify destination location exists
-      const destinationLocation = await Location.findById(
-        initialStockLocationId,
-        null,
-        { session }
-      );
+      // Verify destination location exists and belongs to user
+      const destinationLocation = await Location.findOne(
+        { _id: initialStockLocationId, owner: req.user._id }
+      ).session(session);
+
       if (!destinationLocation) {
         throw new ApiError(404, "Destination location not found");
       }
@@ -97,6 +107,7 @@ const createProduct = asyncHandler(async (req, res) => {
                 doneQuantity: initialStock,
               },
             ],
+            owner: req.user._id,
           },
         ],
         { session }
@@ -125,6 +136,7 @@ const createProduct = asyncHandler(async (req, res) => {
             destinationLocation: initialStockLocationId,
             operationReference: reference,
             date: new Date(),
+            owner: req.user._id,
           },
         ],
         { session }
@@ -155,7 +167,7 @@ const createProduct = asyncHandler(async (req, res) => {
 
 const getProducts = asyncHandler(async (req, res) => {
   const { category, search } = req.query;
-  const query = {};
+  const query = { owner: req.user._id };
 
   if (category) {
     query.category = category;
@@ -203,13 +215,13 @@ const getProducts = asyncHandler(async (req, res) => {
 const getProductById = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
-  const product = await Product.findById(id).populate("category");
+  const product = await Product.findOne({ _id: id, owner: req.user._id }).populate("category");
 
   if (!product) {
     throw new ApiError(404, "Product not found");
   }
 
-  // Get stock quantities across all locations
+  // Get stock quantities across all locations owned by user
   const stockQuantities = await StockQuant.find({ product: id }).populate(
     "location"
   );

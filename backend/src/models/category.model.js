@@ -10,11 +10,16 @@ const categorySchema = new Schema(
     description: {
       type: String,
     },
+    owner: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
   },
   { timestamps: true }
 );
 
-// Add unique index
+
 categorySchema.index({ name: 1 }, { unique: true });
 
 export const Category = mongoose.model("Category", categorySchema);

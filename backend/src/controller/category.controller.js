@@ -11,9 +11,10 @@ const createCategory = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Category name is required");
   }
 
-  // Check if category with same name already exists
+  // Check if category with same name already exists for this user
   const existingCategory = await Category.findOne({ 
-    name: { $regex: new RegExp(`^${name}$`, 'i') } 
+    name: { $regex: new RegExp(`^${name}$`, 'i') },
+    owner: req.user._id
   });
   
   if (existingCategory) {
@@ -23,6 +24,7 @@ const createCategory = asyncHandler(async (req, res) => {
   const category = await Category.create({
     name,
     description,
+    owner: req.user._id,
   });
 
   const categoryResponse = category.toObject();
@@ -36,14 +38,14 @@ const createCategory = asyncHandler(async (req, res) => {
 });
 
 const getCategories = asyncHandler(async (req, res) => {
-  const categories = await Category.find({}).sort({ createdAt: -1 }).lean();
+  const categories = await Category.find({ owner: req.user._id }).sort({ createdAt: -1 }).lean();
 
   const categoryIds = categories.map((category) => category._id);
   let productCounts = [];
 
   if (categoryIds.length > 0) {
     productCounts = await Product.aggregate([
-      { $match: { category: { $in: categoryIds } } },
+      { $match: { category: { $in: categoryIds }, owner: req.user._id } },
       { $group: { _id: "$category", count: { $sum: 1 } } },
     ]);
   }
@@ -72,7 +74,7 @@ const getCategories = asyncHandler(async (req, res) => {
 const getCategoryById = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
-  const category = await Category.findById(id);
+  const category = await Category.findOne({ _id: id, owner: req.user._id });
 
   if (!category) {
     throw new ApiError(404, "Category not found");
@@ -87,7 +89,7 @@ const updateCategory = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { name, description } = req.body;
 
-  const category = await Category.findById(id);
+  const category = await Category.findOne({ _id: id, owner: req.user._id });
 
   if (!category) {
     throw new ApiError(404, "Category not found");
@@ -97,7 +99,8 @@ const updateCategory = asyncHandler(async (req, res) => {
   if (name && name !== category.name) {
     const existingCategory = await Category.findOne({
       name: { $regex: new RegExp(`^${name}$`, 'i') },
-      _id: { $ne: id }
+      _id: { $ne: id },
+      owner: req.user._id
     });
     
     if (existingCategory) {
@@ -110,7 +113,7 @@ const updateCategory = asyncHandler(async (req, res) => {
 
   await category.save();
 
-  const productCount = await Product.countDocuments({ category: category._id });
+  const productCount = await Product.countDocuments({ category: category._id, owner: req.user._id });
 
   const categoryResponse = category.toObject();
   categoryResponse.productCount = productCount;
@@ -125,14 +128,14 @@ const updateCategory = asyncHandler(async (req, res) => {
 const deleteCategory = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
-  const category = await Category.findById(id);
+  const category = await Category.findOne({ _id: id, owner: req.user._id });
 
   if (!category) {
     throw new ApiError(404, "Category not found");
   }
 
   // Check if any products are using this category
-  const productsCount = await Product.countDocuments({ category: id });
+  const productsCount = await Product.countDocuments({ category: id, owner: req.user._id });
 
   if (productsCount > 0) {
     throw new ApiError(

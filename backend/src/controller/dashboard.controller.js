@@ -10,31 +10,34 @@ const getDashboardStats = asyncHandler(async (req, res) => {
     console.log("➡️ Starting dashboard stats fetch for user:", req.user?._id);
 
     // 1. Total Products
-    const totalProducts = await Product.countDocuments();
-    // console.log("✅ Total Products:", totalProducts);
+    const totalProducts = await Product.countDocuments({ owner: req.user._id });
 
     // 2. Pending Receipts (Incoming)
     const pendingReceipts = await Operation.countDocuments({
       type: "RECEIPT",
       status: { $in: ["DRAFT", "READY"] },
+      owner: req.user._id,
     });
 
     // 3. Pending Deliveries (Outgoing)
     const pendingDeliveries = await Operation.countDocuments({
       type: "DELIVERY",
       status: { $in: ["DRAFT", "READY"] },
+      owner: req.user._id,
     });
 
     // 4. Internal Transfers Scheduled
     const internalTransfers = await Operation.countDocuments({
       type: "INTERNAL_TRANSFER",
       status: { $in: ["DRAFT", "READY"] },
+      owner: req.user._id,
     });
 
-    // 5. Low Stock Items (using simple query if possible, or aggregation)
-    // Simplified optimization: If you just need count, we can do it simpler if `currentStock` was on Product.
-    // Since it's calculated, we stick to aggregation.
+    // 5. Low Stock Items
     const lowStockItems = await Product.aggregate([
+      {
+        $match: { owner: req.user._id }
+      },
       {
         $lookup: {
           from: "stockquants",
@@ -63,6 +66,9 @@ const getDashboardStats = asyncHandler(async (req, res) => {
     // 6. Out of Stock Items
     const outOfStockItems = await Product.aggregate([
       {
+        $match: { owner: req.user._id }
+      },
+      {
         $lookup: {
           from: "stockquants",
           localField: "_id",
@@ -89,14 +95,14 @@ const getDashboardStats = asyncHandler(async (req, res) => {
 
     // --- Recent Activity (Combined) ---
     // Fetch recent Operations
-    const recentOps = await Operation.find({})
+    const recentOps = await Operation.find({ owner: req.user._id })
       .sort({ createdAt: -1 })
       .limit(6)
       .select("reference type status createdAt")
       .lean();
 
     // Fetch recent Products
-    const recentProducts = await Product.find({})
+    const recentProducts = await Product.find({ owner: req.user._id })
       .sort({ createdAt: -1 })
       .limit(6)
       .select("name sku createdAt")
@@ -131,30 +137,12 @@ const getDashboardStats = asyncHandler(async (req, res) => {
     trendStartDate.setHours(0, 0, 0, 0);
     trendStartDate.setDate(trendStartDate.getDate() - (historyDays - 1));
 
-    // Debug: Check if any DONE operations exist
-    const doneOpsCount = await Operation.countDocuments({
-      createdAt: { $gte: trendStartDate },
-      status: "DONE",
-    });
-    console.log("🔍 DONE operations count:", doneOpsCount);
-    console.log("📅 Trend Start Date:", trendStartDate);
-
-    // Debug: Get sample operation
-    const sampleOp = await Operation.findOne({ status: "DONE" }).lean();
-    if (sampleOp) {
-      console.log("📋 Sample DONE operation:", {
-        type: sampleOp.type,
-        status: sampleOp.status,
-        createdAt: sampleOp.createdAt,
-        firstLine: sampleOp.lines?.[0]
-      });
-    }
-
     const stockMovementRaw = await Operation.aggregate([
       {
         $match: {
           createdAt: { $gte: trendStartDate },
           status: "DONE",
+          owner: req.user._id,
         },
       },
       { $unwind: "$lines" },
@@ -183,7 +171,6 @@ const getDashboardStats = asyncHandler(async (req, res) => {
     ]);
 
     console.log("📊 Stock Movement Raw Data:", stockMovementRaw);
-    console.log("📅 Trend Start Date:", trendStartDate);
 
     const stockMovementMap = stockMovementRaw.reduce((acc, item) => {
       const dateKey = item._id.date;
@@ -217,7 +204,6 @@ const getDashboardStats = asyncHandler(async (req, res) => {
     const stockMovements = Array.from({ length: historyDays }).map((_, index) => {
       const current = new Date(trendStartDate);
       current.setDate(trendStartDate.getDate() + index);
-      // Format as YYYY-MM-DD using local date (not UTC)
       const year = current.getFullYear();
       const month = String(current.getMonth() + 1).padStart(2, '0');
       const day = String(current.getDate()).padStart(2, '0');
@@ -249,7 +235,6 @@ const getDashboardStats = asyncHandler(async (req, res) => {
     for (let i = 1; i <= futureDays; i++) {
       const futureDate = new Date(today);
       futureDate.setDate(today.getDate() + i);
-      // Format as YYYY-MM-DD using local date (not UTC)
       const fYear = futureDate.getFullYear();
       const fMonth = String(futureDate.getMonth() + 1).padStart(2, '0');
       const fDay = String(futureDate.getDate()).padStart(2, '0');
@@ -278,12 +263,6 @@ const getDashboardStats = asyncHandler(async (req, res) => {
       outOfStockCount,
       recentOperations,
       stockMovements,
-      // Debug info
-      _debug: {
-        trendStartDate: trendStartDate.toISOString(),
-        stockMovementRawCount: stockMovementRaw.length,
-        stockMovementRawSample: stockMovementRaw.slice(0, 3),
-      }
     };
 
     // 12. Calculate Financials (Manager Only)
@@ -295,6 +274,7 @@ const getDashboardStats = asyncHandler(async (req, res) => {
             createdAt: { $gte: trendStartDate },
             status: "DONE",
             type: "DELIVERY",
+            owner: req.user._id, // Filter for manager's own operations
           },
         },
         { $unwind: "$lines" },
@@ -359,7 +339,6 @@ const getDashboardStats = asyncHandler(async (req, res) => {
         (_, index) => {
           const current = new Date(trendStartDate);
           current.setDate(trendStartDate.getDate() + index);
-          // Format as YYYY-MM-DD using local date (not UTC) to match DB output
           const year = current.getFullYear();
           const month = String(current.getMonth() + 1).padStart(2, '0');
           const day = String(current.getDate()).padStart(2, '0');

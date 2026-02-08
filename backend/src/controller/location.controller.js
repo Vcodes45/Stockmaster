@@ -19,6 +19,7 @@ const createLocation = asyncHandler(async (req, res) => {
     name,
     type,
     address,
+    owner: req.user._id,
   });
 
   return res
@@ -29,7 +30,7 @@ const createLocation = asyncHandler(async (req, res) => {
 const getLocations = asyncHandler(async (req, res) => {
   const { type } = req.query;
 
-  const query = {};
+  const query = { owner: req.user._id };
   if (type) {
     const validTypes = ["INTERNAL", "CUSTOMER", "VENDOR", "INVENTORY_LOSS", "VIEW"];
     if (!validTypes.includes(type)) {

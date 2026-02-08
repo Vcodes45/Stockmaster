@@ -10,12 +10,12 @@ const operationLineSchema = new Schema({
     type: Number,
     required: true,
     min: [0, "Demand quantity cannot be negative"],
-  }, // Ordered Qty
+  }, 
   doneQuantity: {
     type: Number,
     default: 0,
     min: [0, "Done quantity cannot be negative"],
-  }, // Actual Processed Qty
+  },
 });
 
 const operationSchema = new mongoose.Schema(
@@ -23,7 +23,7 @@ const operationSchema = new mongoose.Schema(
     reference: {
       type: String,
       required: true,
-    }, // e.g., WH/IN/001
+    }, 
     type: {
       type: String,
       enum: ["RECEIPT", "DELIVERY", "INTERNAL_TRANSFER", "ADJUSTMENT"],
@@ -32,9 +32,9 @@ const operationSchema = new mongoose.Schema(
     partner: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Contact",
-    }, // Vendor or Customer
+    },
 
-    // Movement Logic
+
     sourceLocation: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Location",
@@ -52,12 +52,17 @@ const operationSchema = new mongoose.Schema(
       enum: ["DRAFT", "READY", "DONE", "CANCELLED"],
       default: "DRAFT",
     },
-    lines: [operationLineSchema], // The items involved
+    lines: [operationLineSchema],
+    owner: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
   },
   { timestamps: true }
 );
 
-// Add indexes for efficient querying
+
 operationSchema.index({ type: 1 });
 operationSchema.index({ status: 1 });
 operationSchema.index({ scheduledDate: 1 });
