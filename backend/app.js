@@ -4,10 +4,43 @@ import cookieParser from "cookie-parser";
 
 const app = express();
 
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:5174",
+  "https://stockmaster-lovat.vercel.app"
+];
+
+// Add environment origin if it exists and isn't wildcard
+if (process.env.CORS_ORIGIN && process.env.CORS_ORIGIN !== '*') {
+  allowedOrigins.push(process.env.CORS_ORIGIN);
+}
+
 // CORS configuration
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN === '*' ? '*' : ["http://localhost:5173", "http://localhost:5174", "https://stockmaster-lovat.vercel.app", process.env.CORS_ORIGIN],
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+
+      // Check against allowed origins
+      if (allowedOrigins.indexOf(origin) !== -1) {
+        return callback(null, true);
+      }
+
+      // Allow all Vercel deployments (previews and production)
+      if (origin.endsWith('.vercel.app')) {
+        return callback(null, true);
+      }
+
+      // If generic wildcard is configured in env, allow dynamic origin
+      if (process.env.CORS_ORIGIN === '*') {
+        return callback(null, true);
+      }
+
+      // Fail otherwise
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      return callback(new Error(msg), false);
+    },
     credentials: true,
   })
 );
