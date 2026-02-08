@@ -7,7 +7,8 @@ const app = express();
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:5174",
-  "https://stockmaster-lovat.vercel.app"
+  "https://stockmaster-lovat.vercel.app",
+  "https://stockmaster-086q.onrender.com"
 ];
 
 // Add environment origin if it exists and isn't wildcard
